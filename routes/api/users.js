@@ -18,101 +18,49 @@ router.get("/", (req,res) => {
     res.send("This is an users routing page.")
 });
 
-router.post("/register", (req,res) => {
+router.post("/register", (req, res) => {
 
-    //Validating Register Fields
+  //Validating Register Fields
+  const { isvalid, errors } = validatingInputRegister(req.body);
 
-    const { isvalid, errors } = validatingInputRegister(req.body);
+  if(isvalid === true) { 
+    // if errors object is not empty then return errors
+    return res.status(400).json(errors);
+  }
 
-    if(!isvalid) // if errors object is not empty then return errors
-    {
-       return res.status(400).json(errors);
-    }
+  User.findOne({email : req.body.email}).then(user => {
+    if(user) {
+      return res.status(400).json({email : "Email is Already Exists."});
+    } 
 
-    User.findOne({email : req.body.email}).then(user => {
-       if(user) {
-
-           return res.status(400).json({email : "Email is Already Exists."});
-
-       } else {
-
-           const avatar = gravatar.url(req.body.email, {
-               s : "200", //size
-               r : "pg", //rating
-               d : "mm" //default
-           });
-
-           const newUser = new User({
-               name: req.body.name,
-               email: req.body.email,
-               avatar: avatar,
-               password : req.body.password
-           });
-
-           //Hashing and salting the password using bcryptjs
-
-           bcrypt.genSalt(10, (err, salt) => {
-               bcrypt.hash(newUser.password, salt, (err, hash) => {
-                   if(err) {
-                       return err;
-                   }
-                   newUser.password = hash;
-                   newUser.save().then((user) => {
-                       res.json(user);
-                   }).catch((err) => {
-                       console.log(err);
-                   });
-               });
-           });
-
-       }
+    const avatar = gravatar.url(req.body.email, {
+      s : "200", //size
+      r : "pg", //rating
+      d : "mm" //default
     });
-});
 
-// router.post("/register", (req,res) => {
-//     //Validating Register Fields
-//     // const { isvalid, errors } = validatingInputRegister(req.body);
-  
-//     // if(!isvalid) { // if errors object is not empty then return errors 
-//     //   return res.status(400).json(errors);
-//     // }
-  
-//     // User.findOne({email : req.body.email})
-//     //   .then(user => {
-//     //     if(user) {
-//     //       return res.status(400).json({email : "Email is Already Exists."});
-//     //     }
-  
-//         let avatar = gravatar.url(req.body.email, {
-//           s : "200", //size
-//           r : "pg", //rating
-//           d : "mm" //default
-//         });
-  
-//         let newUser = new User({
-//           name: req.body.name,
-//           email: req.body.email,
-//           avatar: avatar,
-//           password : req.body.password
-//         });
-  
-//         //Hashing and salting the password using bcryptjs
-//         bcrypt.genSalt(10, (err, salt) => {
-//           bcrypt.hash(newUser.password, salt, (err, hash) => {
-//             if(err) {
-//               return err;
-//             }
-//             newUser.password = hash;
-//             newUser.save()
-//             .then((user) => {
-//               return res.json(user);
-//             }).catch((err) => {
-//               console.log(err);
-//             });
-//           });
-//         });
-//     });
-//   });
+    const newUser = new User({
+      name: req.body.name,
+      email: req.body.email,
+      avatar: avatar,
+      password : req.body.password
+    });
+    //Hashing and salting the password using bcryptjs
+    bcrypt.genSalt(10, (err, salt) => {
+      bcrypt.hash(newUser.password, salt, (err, hash) => {
+        if(err) {
+          return err;
+        }
+        newUser.password = hash;
+        newUser.save().then((user) => {
+          return res.json(user);
+        }).catch((err) => {
+          return console.log(err);
+        });
+      });
+    });
+  });
+});
 
 router.post('/login', (req,res) => {
 
